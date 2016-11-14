@@ -1,0 +1,416 @@
+#include <stdio.h>
+#include <math.h>
+#include <iostream>
+using namespace std;
+
+
+double LM(double *l,double *T1,double *T2);
+double MM(double *l,double *T3,double *T4);
+double NM(double *l,double *T1,double *T2,double *T3,double *T4);
+double Udot(double *X,double *m,double *q,double *r,double *W,double *V,double *th);
+double Vdot(double *Y,double *m,double *r,double *p,double *U,double *W,double *th,double *phi);
+double Wdot(double *Z,double *m,double *p,double *q,double *V,double *U,double *th,double *phi);
+double Wdot(double *Z,double *m,double *p,double *q,double *V,double *U,double *th,double *phi);
+double Pdot(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N);
+double Qdot(double *Ix,double *Iy,double *Iz,double *Ixz,double *r,double *p,double *M);
+double Rdot(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N);
+double Phidot(double *p,double *q,double *r,double *th,double *phi);
+double Thdot(double *q,double *r,double *phi);
+double Yawdot(double *q,double *r,double *phi,double *th);
+double Fu(double *X,double *m,double *q,double *r,double *W,double *V,double *th,double *h,double *U);
+double Fv(double *Y,double *m,double *p,double *r,double *W,double *U,double *th,double *h,double *phi,double *V);
+double Fw(double *Z,double *m,double *p,double *q,double *V,double *U,double *th,double *h,double *phi,double *W);
+double Fp(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N,double *h,double *P);
+double Fq(double *Ix,double *Iy,double *Iz,double *Ixz,double *p,double *r,double *M,double *h,double *Q);
+double Fr(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N,double *h,double *R);
+double Fphi(double *p,double *q,double *r,double *th,double *phi,double *h,double *Phi);
+double Fth(double *q,double *r,double *phi,double *h,double *Th);
+double Fyaw(double *q,double *r,double *th,double *phi,double *h,double *Yaw);
+main(){
+	
+	double X,Y,Z,m,p,q,r,phi,W,V,U,P,Q,R,th,Phi,Th,Yaw,yaw,Ix,Iy,Iz,Ixz,Izx,L,M,N,h,LM1,l,MM1,NM1;
+	double T1,T2,T3,T4;
+	double udot,vdot,wdot,pdot,qdot,rdot,phidot,thdot,yawdot;
+	//double k1[9],k2[9],k3[9],k4[9];
+
+	X   = 3.0;	//Xの初期値
+	Y   = 5.0;	//Yの初期値
+	Z   = 100.0;	//Zの初期値
+	m   = 617.0;    //機体の重量
+	p   = 25.0;	//x方向の回転角の初期位置
+	q   = 2.0;	//y方向の回転角の初期位置
+	r   = 3.0;	//z方向の回転角の初期位置
+	W   = 5.0;	//x方向の速度の初期位置
+	V   = 4.0;	//Y方向の速度の初期位置
+	U   = 50.0;	//z方向の速度の初期位置
+	th = 30.0;	//thの初期角度
+	phi =30.0;	//phiの初期角度
+	yaw = 10.0;	//yawの初期角度
+	Ix  = 5.0;	//Ixの初期値
+	Iy = 7.0;	//Iyの初期値
+	Iz = 13.0;	//Izの初期値
+	Ixz = 21.0;	//Ixzの初期値
+	Izx = 9.0;	//Izxの初期値
+	L   = 23.0;	//Lの初期値
+	M   = 31.0;	//Mの初期値
+	N   = 67.0;	//Nの初期値
+	h   = 0.01;	//刻み幅
+	l   =5.0;       //腕の長さ
+	T1  =10.0;
+	T2  =20.0;
+	T3  =15.0;
+	T4  =40.0;
+
+
+//	while (1){
+		printf("%5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f %5.3f"
+			,U,V,W,p,q,r,phi,th,yaw);
+		cout<<endl;
+		LM1 = LM(&l,&T1,&T2);
+		MM1 = MM(&l,&T3,&T4);
+		NM1 = NM(&l,&T1,&T2,&T3,&T4);
+
+		udot   = Udot(&X,&m,&q,&r,&W,&V,&th);
+		vdot   = Vdot(&Y,&m,&r,&p,&U,&W,&th,&phi);
+		wdot   = Wdot(&Z,&m,&p,&q,&V,&U,&th,&phi);
+		pdot   = Pdot(&Ix,&Iy,&Iz,&Ixz,&Izx,&p,&q,&r,&L,&N);
+		cout<<"pdot="<<pdot<<endl;
+		qdot   = Qdot(&Ix,&Iy,&Iz,&Ixz,&p,&r,&M);
+		cout<<"qdot="<<qdot<<endl;
+		rdot   = Rdot(&Ix,&Iy,&Iz,&Ixz,&Izx,&p,&q,&r,&L,&N);
+		cout<<"rdot="<<Rdot(&Ix,&Iy,&Iz,&Ixz,&Izx,&p,&q,&r,&L,&N)<<endl;
+		phidot = Phidot(&p,&q,&r,&phi,&th);
+		cout<<"Phidot="<<phidot<<endl;
+		thdot  = Thdot(&q,&r,&phi);
+		cout<<"Thdot="<<Thdot(&q,&r,&phi)<<endl;
+		yawdot = Yawdot(&q,&r,&phi,&th);
+		cout<<"yawdot="<<yawdot<<endl;
+		U   = Fu(&X,&m,&p,&r,&W,&V,&th,&h,&U);
+		cout<<"U="<<U<<endl;
+		V   = Fv(&Y,&m,&p,&r,&W,&U,&th,&h,&phi,&V);
+		cout<<"V="<<V<<endl;
+		W   = Fw(&Z,&m,&p,&q,&V,&U,&th,&h,&phi,&W);
+		cout<<"W="<<W<<endl;
+		p   = Fp(&Ix,&Iy,&Iz,&Ixz,&Izx,&p,&q,&r,&L,&N,&h,&P);
+		cout<<"P="<<P<<endl;
+		q   = Fq(&Ix,&Iy,&Iz,&Ixz,&p,&r,&M,&h,&Q);
+		cout<<"Q="<<Q<<endl;
+		r   = Fr(&Ix,&Iy,&Iz,&Ixz,&Izx,&p,&q,&r,&L,&N,&h,&R);
+		cout<<"R="<<R<<endl;
+		phi = Fphi(&p,&q,&r,&th,&phi,&h,&Phi);
+		cout<<"phi="<<Phi<<endl;
+		th  = Fth(&q,&r,&phi,&h,&Th);
+		cout<<"Th="<<Th<<endl;
+		yaw = Fyaw(&q,&r,&th,&phi,&h,&Yaw);
+		cout<<"Yaw="<<Yaw<<endl;
+
+//	}
+} 
+	 
+double LM(double *l,double *T1,double *T2)
+{
+	return (*l) * ((*T2) - (*T1));
+}
+
+double MM(double *l,double *T3,double *T4)
+{
+	return(*l) * ((*T3) - (*T4));
+}
+
+double NM(double *l,double *T1,double *T2,double *T3,double *T4)
+{
+	return (*l) * ((*T1) + (*T2) - ((*T3) + (*T4)));
+}
+
+double Udot(double *X,double *m,double *q,double *r,double *W,double *V,double *th)
+{
+
+	return (*X)/(*m) - 9.80665*sin(*th) - (*q)*(*W) + (*r)*(*V);
+}
+
+double Vdot(double *Y,double *m,double *r,double *p,double *U,double *W,double *th,double *phi)
+{
+
+	return (*Y)/(*m) + 9.80665*cos(*th)*sin(*phi) - (*r)*(*U) + (*p)*(*W);
+}
+
+double Wdot(double *Z,double *m,double *p,double *q,double *V,double *U,double *th,double *phi)
+{
+	return (*Z)/(*m )+ 9.80665*cos(*th)*cos(*phi) - (*p)*(*V) + (*q)*(*U);
+}
+
+double Pdot(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N)
+{
+	double pdot,pbunbo,pbunshi;
+	pbunbo = ((*Iz)*((*L) - (*q)*(*r)*((*Iz)-(*Iy)) + (*p)*(*q)*(*Ixz)) + (*Izx)*((*N) - (*p)*(*q)*((*Iy)-(*Ix)) - (*q)*(*r)*(*Ixz)));
+	pbunshi = (((*Ix)*(*Iz)) - ((*Ixz)*(*Izx)));
+	pdot = pbunbo / pbunshi;
+	return pdot;
+}
+
+double Qdot(double *Ix,double *Iy,double *Iz,double *Ixz,double *r,double *p,double *M)
+{ 
+
+	return ((*M) - ((*r)*(*p)*((*Ix)-(*Iz))) - ((*Ixz)*((*r)*(*r) - (*p)*(*p)))) / (*Iy);
+}
+
+double Rdot(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N)
+{
+	double rbunbo,rbunshi;
+	rbunbo = ((*Ixz)*((*L) - (*q)*(*r)*((*Iz)-(*Iy)) + (*p)*(*q)*(*Ixz)) + (*Ix)*((*N) - (*p)*(*q)*((*Iz)-(*Ix)) - (*q)*(*r)*(*Ixz)));
+	rbunshi = (((*Ix)*(*Iz)) - ((*Izx)*(*Ixz)));
+	return rbunbo / rbunshi;
+}
+
+double Phidot(double *p,double *q,double *r,double *th,double *phi)
+{
+	return (*p) + (*q)*sin(*phi)*tan(*th) + (*r)*cos(*phi)*tan(*th);
+}
+
+double Thdot(double *q,double *r,double *phi)
+{
+
+	return ((*q)*cos(*phi)) - ((*r)*sin(*phi));
+}
+
+double Yawdot(double *q,double *r,double *phi,double *th)
+{
+
+	return (*q)*sin(*phi)*(1/cos(*th)) + (*r)*cos(*phi)*(1/cos(*th));
+}
+
+double  Fu(double *X,double *m,double *q,double *r,double *W,double *V,double *th,double *h,double *U)
+{
+	double k[4];
+	double Fux,Fum,Fuq,Fur,FuW,FuV,Futh;
+	k[0] = Udot(X,m,q,r,W,V,th);
+	for(int i=0;i<2;i++)
+	{
+		Fux=((*X)+(*h)*k[i]*0.5);
+		Fum=((*m)+(*h)*k[i]*0.5);
+		Fuq=((*q)+(*h)*k[i]*0.5);
+		Fur=((*r)+(*h)*k[i]*0.5);
+		FuW=((*W)+(*h)*k[i]*0.5);
+		FuV=((*V)+(*h)*k[i]*0.5);
+		Futh=((*th)+(*h)*k[i]*0.5);		
+		
+		k[i+1] = Udot(&Fux,&Fum,&Fuq,&Fur,&FuW,&FuV,&Futh);
+	}
+
+		Fux=((*X)+(*h)*k[2]);
+		Fum=((*m)+(*h)*k[2]);
+		Fuq=((*q)+(*h)*k[2]);
+		Fur=((*r)+(*h)*k[2]);
+		FuW=((*W)+(*h)*k[2]);
+		FuV=((*V)+(*h)*k[2]);
+		Futh=((*th)+(*h)*k[2]);		
+		
+		k[3] = Udot(&Fux,&Fum,&Fuq,&Fur,&FuW,&FuV,&Futh);
+
+	*U = *U + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *U;
+}
+
+
+double  Fv(double *Y,double *m,double *p,double *r,double *W,double *U,double *th,double *h,double *phi,double *V)
+{
+	double k[4];
+	double Fvy,Fvm,Fvp,Fvr,FvW,FvU,Fvth,Fvphi;
+	k[0] = Vdot(Y,m,p,r,W,U,th,phi);
+	for(int i=0;i<3;i++)
+	{
+		Fvy=((*Y)+(*h)*k[i]*0.5);
+		Fvm=((*m)+(*h)*k[i]*0.5);
+		Fvp=((*p)+(*h)*k[i]*0.5);
+		Fvr=((*r)+(*h)*k[i]*0.5);
+		FvW=((*W)+(*h)*k[i]*0.5);
+		FvU=((*U)+(*h)*k[i]*0.5);
+		Fvth=((*th)+(*h)*k[i]*0.5);		
+		Fvphi=(*phi)+(*h)*k[i]*0.5;
+
+		k[i+1] = Vdot(&Fvy,&Fvm,&Fvp,&Fvr,&FvW,&FvU,&Fvth,&Fvphi);
+	}
+
+		Fvy=((*Y)+(*h)*k[2]);
+		Fvm=((*m)+(*h)*k[2]);
+		Fvp=((*p)+(*h)*k[2]);
+		Fvr=((*r)+(*h)*k[2]);
+		FvW=((*W)+(*h)*k[2]);
+		FvU=((*U)+(*h)*k[2]);
+		Fvth=((*th)+(*h)*k[2]);		
+		Fvphi=(*phi)+(*h)*k[2];
+
+		k[3] = Vdot(&Fvy,&Fvm,&Fvp,&Fvr,&FvW,&FvU,&Fvth,&Fvphi);
+
+	*V = *V + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *V;
+}
+
+
+double  Fw(double *Z,double *m,double *p,double *q,double *V,double *U,double *th,double *h,double *phi,double *W)
+{
+	double k[4];
+	double Fwy,Fwm,Fwp,Fwq,FwV,FwU,Fwth,Fwphi;
+	k[0] = Wdot(Z,m,p,q,V,U,th,phi);
+	for(int i=0;i<3;i++)
+	{
+		Fwy=((*Z)+(*h)*k[i]*0.5);
+		Fwm=((*m)+(*h)*k[i]*0.5);
+		Fwp=((*p)+(*h)*k[i]*0.5);
+		Fwq=((*q)+(*h)*k[i]*0.5);
+		FwV=((*W)+(*h)*k[i]*0.5);
+		FwU=((*U)+(*h)*k[i]*0.5);
+		Fwth=((*th)+(*h)*k[i]*0.5);		
+		Fwphi=(*phi)+(*h)*k[i]*0.5;
+
+		k[i+1] = Wdot(&Fwy,&Fwm,&Fwp,&Fwq,&FwV,&FwU,&Fwth,&Fwphi);
+	}
+
+		Fwy=((*Z)+(*h)*k[2]);
+		Fwm=((*m)+(*h)*k[2]);
+		Fwp=((*p)+(*h)*k[2]);
+		Fwq=((*q)+(*h)*k[2]);
+		FwV=((*W)+(*h)*k[2]);
+		FwU=((*U)+(*h)*k[2]);
+		Fwth=((*th)+(*h)*k[2]);		
+		Fwphi=(*phi)+(*h)*k[2];
+
+		k[3] = Wdot(&Fwy,&Fwm,&Fwp,&Fwq,&FwV,&FwU,&Fwth,&Fwphi);
+	*W = *W + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *W;
+}
+
+double Fp(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N,double *h,double *P)
+{
+	double FpIx,FpIy,FpIz,FpIxz,FpIzx,Fpp,Fpq,Fpr,FpL,FpN;
+	double k[4];
+	k[0] = Pdot(Ix,Iy,Iz,Ixz,Izx,p,q,r,L,N);
+
+	for(int i=0;i<3;i++)
+	{
+	 	FpIx = (*Ix)+(*h)*k[i]*0.5;
+		FpIy = (*Iy)+(*h)*k[i]*0.5;
+		FpIz = (*Iz)+(*h)*k[i]*0.5;
+		FpIxz = (*Ixz)+(*h)*k[i]*0.5;
+		FpIzx = (*Izx)+(*h)*k[i]*0.5;
+		Fpp = (*p)+(*h)*k[i]*0.5;
+		Fpq = (*q)+(*h)*k[i]*0.5;
+		Fpr = (*r)+(*h)*k[i]*0.5;
+		FpL = (*L)+(*h)*k[i]*0.5;
+		FpN = (*N)+(*h)*k[i]*0.5;	
+		
+		k[i+1] = Pdot(&FpIx,&FpIy,&FpIz,&FpIxz,&FpIzx,&Fpp,&Fpq,&Fpr,&FpL,&FpN);
+	}
+
+	*P = *P + ((*h) * (k[0] + 2*k[1] + 2*k[2] +k[3])) / 6;
+	return *P;
+}
+
+double Fq(double *Ix,double *Iy,double *Iz,double *Ixz,double *p,double *r,double *M,double *h,double *Q)
+{
+	double k[4];
+	double FqIx,FqIy,FqIz,FqIxz,Fqp,Fqr,FqM;
+	k[0] = Qdot(Ix,Iy,Iz,Ixz,p,r,M);
+
+	for(int i=0;i<3;i++)
+	{
+		FqIx = (*Ix)+(*h)*k[i]*0.5;
+		FqIy = (*Iy)+(*h)*k[i]*0.5;
+		FqIz = (*Iz)+(*h)*k[i]*0.5;
+		FqIxz = (*Ixz)+(*h)*k[i]*0.5;
+		Fqp = (*p)+(*h)*k[i]*0.5;
+		Fqr = (*r)+(*h)*k[i]*0.5;
+		FqM = (*M)+(*h)*k[i]*0.5;
+		
+		k[i+1] = Qdot(&FqIx,&FqIy,&FqIz,&FqIxz,&Fqp,&Fqr,&FqM);
+	}
+
+	*Q = *Q + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *Q;
+
+}
+
+double Fr(double *Ix,double *Iy,double *Iz,double *Ixz,double *Izx,double *p,double *q,double *r,double *L,double *N,double *h,double *R)
+{
+	double k[4];
+	double FrIx,FrIy,FrIz,FrIxz,FrIzx,Frp,Frq,Frr,FrL,FrN;
+	k[0] = Rdot(Ix,Iy,Iz,Ixz,Izx,p,q,r,L,N);
+	for(int i=0;i<3;i++)
+	{
+		FrIx = (*Ix)+(*h)*k[i]*0.5;
+		FrIy = (*Iy)+(*h)*k[i]*0.5;
+		FrIz = (*Iz)+(*h)*k[i]*0.5;
+		FrIxz = (*Ixz)+(*h)*k[i]*0.5;
+		FrIzx = (*Izx)+(*h)*k[i]*0.5;
+		Frp = (*p)+(*h)*k[i]*0.5;
+		Frq = (*q)+(*h)*k[i]*0.5;
+		Frr = (*r)+(*h)*k[i]*0.5;
+		FrL = (*L)+(*h)*k[i]*0.5;
+		FrN = (*N)+(*h)*k[i]*0.5;
+	
+		k[i+1] = Rdot(&FrIx,&FrIy,&FrIz,&FrIxz,&FrIzx,&Frp,&Frq,&Frr,&FrL,&FrN);
+	}
+	
+	*R = *R + ((*h) * (k[0] + 2*k[1] + 2*k[2] +k[3])) / 6;
+	return *R;
+}
+
+double Fphi(double *p,double *q,double *r,double *th,double *phi,double *h,double *Phi)
+{
+	double k[4];
+	double Fphi_p,Fphi_q,Fphi_r,Fphi_th,Fphi_phi;
+	k[0] = Phidot(p,q,r,th,phi);
+	for(int i=0;i<3;i++)
+	{
+		Fphi_p = (*p)+(*h)*k[i]*0.5;
+		Fphi_q = (*q)+(*h)*k[i]*0.5;
+		Fphi_r = (*r)+(*h)*k[i]*0.5;
+		Fphi_th = (*th)+(*h)*k[i]*0.5;
+		Fphi_phi = (*phi)+(*h)*k[i]*0.5;
+
+		k[i+1] = Phidot(&Fphi_p,&Fphi_q,&Fphi_r,&Fphi_th,&Fphi_phi);	
+	}
+
+	*Phi = *Phi + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *Phi;
+}
+
+
+double Fth(double *q,double *r,double *phi,double *h,double *Th)
+{
+	double k[4];
+	double Fth_q,Fth_r,Fth_phi;
+	k[0] = Thdot(q,r,phi);
+	
+	for(int i=0;i<3;i++)
+	{
+		Fth_q = (*q)+(*h)*k[i]*0.5;
+		Fth_r = (*r)+(*h)*k[i]*0.5;
+		Fth_phi = (*phi)+(*h)*k[i]*0.5;
+
+		k[i+1] = Thdot(&Fth_q,&Fth_r,&Fth_phi);
+	}
+	*Th = *Th + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *Th;
+}
+
+double Fyaw(double *q,double *r,double *th,double *phi,double *h,double *Yaw)
+{
+	double k[4];
+	double Fyaw_q,Fyaw_r,Fyaw_th,Fyaw_phi;
+	k[0] = Yawdot(q,r,th,phi);
+	for(int i=0;i<3;i++)
+	{
+		Fyaw_q = (*q)+(*h)*k[i]*0.5;
+		Fyaw_r = (*r)+(*h)*k[i]*0.5;
+		Fyaw_th = (*th)+(*h)*k[i]*0.5;
+		Fyaw_phi = (*phi)+(*h)*k[i]*0.5;
+	}
+
+	*Yaw = *Yaw + ((*h) * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return *Yaw;
+}
+
+
+
+
