@@ -1,0 +1,5 @@
+set grid;
+plot "flightlog.txt" u 10:6 w l title "r";
+set terminal postscript eps enhanced color;
+set output "r.eps";
+replot;

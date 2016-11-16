@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <fstream>
 using namespace std;
 
 
 double LM(double l,double T1,double T2);
 double MM(double l,double T3,double T4);
 double NM(double l,double T1,double T2,double T3,double T4);
+double Zp(double T1,double T2,double T3,double T4);
 double Udot(double X,double m,double q,double r,double W,double V,double th);
 double Vdot(double Y,double m,double r,double p,double U,double W,double th,double phi);
 double Wdot(double Z,double m,double p,double q,double V,double U,double th,double phi);
@@ -19,13 +21,15 @@ double Yawdot(double q,double r,double th,double phi);
 double Fu(double X,double m,double q,double r,double W,double V,double th,double h,double U);
 double Fv(double Y,double m,double p,double r,double W,double U,double th,double h,double phi,double V);
 double Fw(double Z,double m,double p,double q,double V,double U,double th,double h,double phi,double W);
-double Fp(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h);
-double Fq(double Ix,double Iy,double Iz,double Ixz,double p,double r,double m,double h,double q);
-double Fr(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h);
-double Fphi(double p,double q,double r,double th,double phi,double h);
-double Fth(double q,double r,double h,double phi);
-double Fyaw(double q,double r,double th,double phi,double h,double yaw);
-main(){
+double Fp(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h,double P);
+double Fq(double Ix,double Iy,double Iz,double Ixz,double p,double r,double M,double h,double Q);
+double Fr(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h,double R);
+double Fphi(double p,double q,double r,double th,double phi,double h,double Phi);
+double Fth(double q,double r,double phi,double h,double Th);
+double Fyaw(double q,double r,double th,double phi,double h,double Yaw);
+
+main()
+{
 	double X,Y,Z,m,p,q,r,th,phi,yaw,W,V,U,P,Q,R,Phi,Th,Yaw,Ix,Iy,Iz,Ixz,Izx,L,M,N,h,l;
 	double T1,T2,T3,T4;
 	double udot,vdot,wdot,pdot,qdot,rdot,phidot,thdot,yawdot;
@@ -34,7 +38,7 @@ main(){
 	X   = 0.0;	//Xの初期値
 	Y   = 0.0;	//Yの初期値
 	Z   = 0.0;	//Zの初期値
-	m   = 717.0;	//機体の重量
+	m   = 737.0;	//機体の重量
 	p   = 0.0;	//x方向の回転角の初期位置
 	q   = 0.0;	//y方向の回転角の初期位置
 	r   = 0.0;	//z方向の回転角の初期位置
@@ -44,28 +48,32 @@ main(){
 	th  = 0.0;	//thの初期角度
 	phi = 0.0;	//phiの初期角度
 	yaw = 0.0;	//yawの初期角度
-	Ix  = 10.389059;	//Ixの初期値
-	Iy  = 10.570814;	//Iyの初期値
-	Iz  = 12.683685;	//Izの初期値
+	Ix  = 11;//10.389059;	//Ixの初期値
+	Iy  = 11;//10.570814;	//Iyの初期値
+	Iz  = 13;//12.683685;	//Izの初期値
 	Ixz = 0.0361921;	//Ixzの初期値
-	Izx = 9.0;	//Izxの初期値
+	Izx = 0.0361921;	//Izxの初期値
 	L   = 0.0;	//Lの初期値
 	M   = 0.0;	//Mの初期値
 	N   = 0.0;	//Nの初期値
 	h   = 0.01;	//刻み幅
 	l   = 136.0;       //腕の長さ
-	T1  = 5.0;
-	T2  = 15.0;
-	T3  = 10.0;
-	T4  = 10.0;
+	T1  = -(m*9.80665/4) - 5.0; //+ 10.0;
+	T2  = -(m*9.80665/4) - 15.0; //+ 10.0;
+	T3  = -(m*9.80665/4) - 15.0; //+ 10.0;
+	T4  = -(m*9.80665/4) - 15.0; //+ 10.0;
 
+	char filename[] = "flightlog.txt";
+	char outstr[255];
+	std::ofstream fs(filename);
 
-	for (short AS=0;AS<=100;AS++){
+	for (short time=0;time<=1000;time++){
 		printf("U=%2.3f V=%2.3f W=%2.3f p=%2.3f q=%2.3f r=%2.3f phi=%2.3f th=%2.3f yaw=%2.3f\n"
 			,U,V,W,p,q,r,phi,th,yaw);
 		L = LM(l,T1,T2);
 		M = MM(l,T3,T4);
 		N = NM(l,T1,T2,T3,T4);
+		Z = Zp(T1,T2,T3,T4);
 
 		//udot   = Udot(&X,&m,&q,&r,&W,&V,&th);
 		//cout<<"Udot="<<udot<<" ";
@@ -91,20 +99,30 @@ main(){
 		//cout<<"V="<<V<<" ";
 		W   = Fw(Z,m,p,q,V,U,th,h,phi,W);
 		//cout<<"W="<<W<<" ";
-		p   = Fp(Ix,Iy,Iz,Ixz,Izx,p,q,r,L,N,h);
+		p   = Fp(Ix,Iy,Iz,Ixz,Izx,p,q,r,L,N,h,P);
 		//cout<<"p="<<p<<" ";
-		q   = Fq(Ix,Iy,Iz,Ixz,p,r,M,h,q);
+		q   = Fq(Ix,Iy,Iz,Ixz,p,r,M,h,Q);
 		//cout<<"q="<<q<<" ";
-		r   = Fr(Ix,Iy,Iz,Ixz,Izx,p,q,r,L,N,h);
+		r   = Fr(Ix,Iy,Iz,Ixz,Izx,p,q,r,L,N,h,R);
 		//cout<<"r="<<r<<" ";
-		phi = Fphi(p,q,r,th,phi,h);
+		phi = Fphi(p,q,r,th,phi,h,Phi);
 		//cout<<"phi="<<phi<<" ";
-		th  = Fth(q,r,h,phi);
+		th  = Fth(q,r,phi,h,Th);
 		//cout<<"th="<<th<<" ";
-		yaw = Fyaw(q,r,th,phi,h,yaw);
+		yaw = Fyaw(q,r,th,phi,h,Yaw);
 		//cout<<"yaw="<<yaw<<" ";
 
+		sprintf(outstr,"%f %f %f %f %f %f %f %f %f %d",
+			U,V,W,
+			p,q,r,
+			phi,th,yaw,
+			time);
+		fs << outstr << endl;
+
 	}
+
+	fs.close();
+
 } 
 	 
 double LM(double l,double T1,double T2)
@@ -120,6 +138,11 @@ double MM(double l,double T3,double T4)
 double NM(double l,double T1,double T2,double T3,double T4)
 {
 	return l * (T1 + T2 - (T3 + T4));
+}
+
+double Zp(double T1,double T2,double T3,double T4)
+{
+	return T1+T2+T3+T4;
 }
 
 double Udot(double X,double m,double q,double r,double W,double V,double th)
@@ -142,8 +165,8 @@ double Wdot(double Z,double m,double p,double q,double V,double U,double th,doub
 double Pdot(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N)
 {
 	double pdot,pbunbo,pbunshi;
-	pbunbo = (Iz*(L - q*r*(Iz-Iy) + p*q*Ixz) + Izx*(N - p*q*(Iy-Ix) - q*r*Ixz));
-	pbunshi = ((Ix*Iz) - (Ixz*Izx));
+	pbunbo = Iz*(L - q*r*(Iz-Iy) + p*q*Ixz) + Izx*(N - p*q*(Iy-Ix) - q*r*Ixz);
+	pbunshi = (Ix*Iz) - (Ixz*Izx);
 	pdot = pbunbo / pbunshi;
 	return pdot;
 }
@@ -151,13 +174,13 @@ double Pdot(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double 
 double Qdot(double Ix,double Iy,double Iz,double Ixz,double r,double p,double M)
 { 
 
-	return (M - (r*p*(Ix-Iz)) - (Ixz*(r*r - p*p))) / Iy;
+	return (M - (r*p*(Ix-Iz)) - (Ixz*(p*p - r*r))) / Iy;
 }
 
 double Rdot(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N)
 {
 	double rbunbo,rbunshi;
-	rbunbo = (Ixz*(L - q*r*(Iz-Iy) + p*q*Ixz) + Ix*(N - p*q*(Iz-Ix) - q*r*Ixz));
+	rbunbo = Ixz*(L - q*r*(Iz-Iy) + p*q*Ixz) + Ix*(N - p*q*(Iy-Ix) - q*r*Ixz);
 	rbunshi = ((Ix*Iz) - (Izx*Ixz));
 	return rbunbo / rbunshi;
 }
@@ -182,30 +205,28 @@ double Yawdot(double q,double r,double th,double phi)
 double  Fu(double X,double m,double q,double r,double W,double V,double th,double h,double U)
 {
 	double k[4];
-	double Fux,Fum,Fuq,Fur,FuW,FuV,Futh;
+	double Fux,Fuq,Fur,FuW,FuV,Futh;
 	k[0] = Udot(X,m,q,r,W,V,th);
 	for(int i=0;i<3;i++)
 	{
 		Fux=(X+h*k[i]*0.5);
-		Fum=(m+h*k[i]*0.5);
 		Fuq=(q+h*k[i]*0.5);
 		Fur=(r+h*k[i]*0.5);
 		FuW=(W+h*k[i]*0.5);
 		FuV=(V+h*k[i]*0.5);
 		Futh=((th)+h*k[i]*0.5);		
 		
-		k[i+1] = Udot(Fux,Fum,Fuq,Fur,FuW,FuV,Futh);
+		k[i+1] = Udot(Fux,m,Fuq,Fur,FuW,FuV,Futh);
 	}
 
 		Fux=(X+h*k[2]);
-		Fum=(m+h*k[2]);
 		Fuq=(q+h*k[2]);
 		Fur=(r+h*k[2]);
 		FuW=(W+h*k[2]);
 		FuV=(V+h*k[2]);
 		Futh=((th)+h*k[2]);		
 		
-		k[3] = Udot(Fux,Fum,Fuq,Fur,FuW,FuV,Futh);
+		k[3] = Udot(Fux,m,Fuq,Fur,FuW,FuV,Futh);
 
 	U = U + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
 	return U;
@@ -215,12 +236,11 @@ double  Fu(double X,double m,double q,double r,double W,double V,double th,doubl
 double  Fv(double Y,double m,double p,double r,double W,double U,double th,double h,double phi,double V)
 {
 	double k[4];
-	double Fvy,Fvm,Fvp,Fvr,FvW,FvU,Fvth,Fvphi;
+	double Fvy,Fvp,Fvr,FvW,FvU,Fvth,Fvphi;
 	k[0] = Vdot(Y,m,p,r,W,U,th,phi);
 	for(int i=0;i<3;i++)
 	{
 		Fvy=(Y+h*k[i]*0.5);
-		Fvm=(m+h*k[i]*0.5);
 		Fvp=(p+h*k[i]*0.5);
 		Fvr=(r+h*k[i]*0.5);
 		FvW=(W+h*k[i]*0.5);
@@ -228,11 +248,10 @@ double  Fv(double Y,double m,double p,double r,double W,double U,double th,doubl
 		Fvth=((th)+h*k[i]*0.5);		
 		Fvphi=(phi)+h*k[i]*0.5;
 
-		k[i+1] = Vdot(Fvy,Fvm,Fvp,Fvr,FvW,FvU,Fvth,Fvphi);
+		k[i+1] = Vdot(Fvy,m,Fvp,Fvr,FvW,FvU,Fvth,Fvphi);
 	}
 
 		Fvy=(Y+h*k[2]);
-		Fvm=(m+h*k[2]);
 		Fvp=(p+h*k[2]);
 		Fvr=(r+h*k[2]);
 		FvW=(W+h*k[2]);
@@ -240,7 +259,7 @@ double  Fv(double Y,double m,double p,double r,double W,double U,double th,doubl
 		Fvth=((th)+h*k[2]);		
 		Fvphi=(phi)+h*k[2];
 
-		k[3] = Vdot(Fvy,Fvm,Fvp,Fvr,FvW,FvU,Fvth,Fvphi);
+		k[3] = Vdot(Fvy,m,Fvp,Fvr,FvW,FvU,Fvth,Fvphi);
 
 	V = V + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
 	return V;
@@ -250,12 +269,11 @@ double  Fv(double Y,double m,double p,double r,double W,double U,double th,doubl
 double  Fw(double Z,double m,double p,double q,double V,double U,double th,double h,double phi,double W)
 {
 	double k[4];
-	double Fwy,Fwm,Fwp,Fwq,FwV,FwU,Fwth,Fwphi;
+	double Fwy,Fwp,Fwq,FwV,FwU,Fwth,Fwphi;
 	k[0] = Wdot(Z,m,p,q,V,U,th,phi);
 	for(int i=0;i<3;i++)
 	{
 		Fwy=(Z+h*k[i]*0.5);
-		Fwm=(m+h*k[i]*0.5);
 		Fwp=(p+h*k[i]*0.5);
 		Fwq=(q+h*k[i]*0.5);
 		FwV=(W+h*k[i]*0.5);
@@ -263,11 +281,10 @@ double  Fw(double Z,double m,double p,double q,double V,double U,double th,doubl
 		Fwth=((th)+h*k[i]*0.5);		
 		Fwphi=(phi)+h*k[i]*0.5;
 
-		k[i+1] = Wdot(Fwy,Fwm,Fwp,Fwq,FwV,FwU,Fwth,Fwphi);
+		k[i+1] = Wdot(Fwy,m,Fwp,Fwq,FwV,FwU,Fwth,Fwphi);
 	}
 
 		Fwy=(Z+h*k[2]);
-		Fwm=(m+h*k[2]);
 		Fwp=(p+h*k[2]);
 		Fwq=(q+h*k[2]);
 		FwV=(W+h*k[2]);
@@ -275,13 +292,13 @@ double  Fw(double Z,double m,double p,double q,double V,double U,double th,doubl
 		Fwth=((th)+h*k[2]);		
 		Fwphi=(phi)+h*k[2];
 
-		k[3] = Wdot(Fwy,Fwm,Fwp,Fwq,FwV,FwU,Fwth,Fwphi);
+		k[3] = Wdot(Fwy,m,Fwp,Fwq,FwV,FwU,Fwth,Fwphi);
 
 	W = W + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
 	return W;
 }
 
-double Fp(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h)
+double Fp(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h,double P)
 {
 	double FpIx,FpIy,FpIz,FpIxz,FpIzx,Fpp,Fpq,Fpr,FpL,FpN;
 	double k[4];
@@ -316,11 +333,11 @@ double Fp(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,
 
 		k[3] = Pdot(FpIx,FpIy,FpIz,FpIxz,FpIzx,Fpp,Fpq,Fpr,FpL,FpN);
 
-	p = p + (h * (k[0] + 2*k[1] + 2*k[2] +k[3])) / 6;
-	return p;
+	P = P + (h * (k[0] + 2*k[1] + 2*k[2] +k[3])) / 6;
+	return P;
 }
 
-double Fq(double Ix,double Iy,double Iz,double Ixz,double p,double r,double M,double h,double q)
+double Fq(double Ix,double Iy,double Iz,double Ixz,double p,double r,double M,double h,double Q)
 {
 	double k[4];
 	double FqIx,FqIy,FqIz,FqIxz,Fqp,Fqr,FqM;
@@ -349,12 +366,12 @@ double Fq(double Ix,double Iy,double Iz,double Ixz,double p,double r,double M,do
 
 		k[3] = Qdot(FqIx,FqIy,FqIz,FqIxz,Fqp,Fqr,FqM);
 
-	q = q + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
-	return q;
+	Q = Q + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return Q;
 
 }
 
-double Fr(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h)
+double Fr(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,double r,double L,double N,double h,double R)
 {
 	double k[4];
 	double FrIx,FrIy,FrIz,FrIxz,FrIzx,Frp,Frq,Frr,FrL,FrN;
@@ -388,11 +405,11 @@ double Fr(double Ix,double Iy,double Iz,double Ixz,double Izx,double p,double q,
 
 		k[3] = Rdot(FrIx,FrIy,FrIz,FrIxz,FrIzx,Frp,Frq,Frr,FrL,FrN);
 
-	r = r + (h * (k[0] + 2*k[1] + 2*k[2] +k[3])) / 6;
-	return r;
+	R = R + (h * (k[0] + 2*k[1] + 2*k[2] +k[3])) / 6;
+	return R;
 }
 
-double Fphi(double p,double q,double r,double th,double phi,double h)
+double Fphi(double p,double q,double r,double th,double phi,double h,double Phi)
 {
 	double k[4];
 	double Fphi_p,Fphi_q,Fphi_r,Fphi_th,Fphi_phi;
@@ -416,33 +433,33 @@ double Fphi(double p,double q,double r,double th,double phi,double h)
 
 		k[3] = Phidot(Fphi_p,Fphi_q,Fphi_r,Fphi_th,Fphi_phi);
 
-	phi = phi + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
-	return th;
+	Phi = Phi + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return Phi;
 }
 
 
-double Fth(double q,double r,double th,double h)
+double Fth(double q,double r,double phi,double h,double Th)
 {
 	double k[4];
 	double Fth_q,Fth_r,Fth_phi;
-	k[0] = Thdot(q,r,th);
+	k[0] = Thdot(q,r,phi);
 	for(int i=0;i<3;i++)
 	{
 		Fth_q = q+h*k[i]*0.5;
 		Fth_r = r+h*k[i]*0.5;
-		Fth_phi = (th)+h*k[i]*0.5;
+		Fth_phi = (phi)+h*k[i]*0.5;
 		k[i+1] = Thdot(Fth_q,Fth_r,Fth_phi);
 	}
 	
 		Fth_q = q+h*k[2];
 		Fth_r = r+h*k[2];
-		Fth_phi = (th)+h*k[2];
+		Fth_phi = (phi)+h*k[2];
 		k[3] = Thdot(Fth_q,Fth_r,Fth_phi);
-	th = th + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
-	return th;
+	Th = Th + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return Th;
 }
 
-double Fyaw(double q,double r,double th,double phi,double h,double yaw)
+double Fyaw(double q,double r,double th,double phi,double h,double Yaw)
 {
 	double k[4];
 	double Fyaw_q,Fyaw_r,Fyaw_th,Fyaw_phi;
@@ -464,8 +481,8 @@ double Fyaw(double q,double r,double th,double phi,double h,double yaw)
 
 		k[3] = Yawdot(Fyaw_q,Fyaw_r,Fyaw_th,Fyaw_phi);
 
-	yaw = yaw + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
-	return yaw;
+	Yaw = Yaw + (h * (k[0] + 2*k[1] + 2*k[2] + k[3])) / 6;
+	return Yaw;
 }
 
 

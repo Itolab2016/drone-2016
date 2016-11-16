@@ -1,0 +1,5 @@
+set grid;
+plot "flightlog.txt" u 10:7 w l title "phi";
+set terminal postscript eps enhanced color;
+set output "phi.eps";
+replot;
