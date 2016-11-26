@@ -4,6 +4,7 @@
 #include <fstream>
 using namespace std;
 
+//b = 33.3 * a -50.0
 
 double LM(double l,double T1,double T2);
 double MM(double l,double T3,double T4);
@@ -30,7 +31,7 @@ double Fyaw(double q,double r,double th,double phi,double h,double Yaw);
 
 main()
 {
-	double X,Y,Z,m,p,q,r,th,phi,yaw,W,V,U,P,Q,R,Phi,Th,Yaw,Ix,Iy,Iz,Ixz,Izx,L,M,N,h,l;
+	double X,Y,Z,m,p,q,r,th,phi,yaw,W,V,U,P,Q,R,Phi,Th,Yaw,Ix,Iy,Iz,Ixz,Izx,L,M,N,h,l,k,af,ab,ar,al,bf,bb,br,bl;
 	double T1,T2,T3,T4;
 	double udot,vdot,wdot,pdot,qdot,rdot,phidot,thdot,yawdot;
 	//double k1[9],k2[9],k3[9],k4[9];
@@ -38,7 +39,7 @@ main()
 	X   = 0.0;	//Xの初期値
 	Y   = 0.0;	//Yの初期値
 	Z   = 0.0;	//Zの初期値
-	m   = 737.0;	//機体の重量
+	m   = 0.737;	//機体の重量
 	p   = 0.0;	//x方向の回転角の初期位置
 	q   = 0.0;	//y方向の回転角の初期位置
 	r   = 0.0;	//z方向の回転角の初期位置
@@ -48,20 +49,29 @@ main()
 	th  = 0.0;	//thの初期角度
 	phi = 0.0;	//phiの初期角度
 	yaw = 0.0;	//yawの初期角度
-	Ix  = 11;//10.389059;	//Ixの初期値
-	Iy  = 11;//10.570814;	//Iyの初期値
-	Iz  = 13;//12.683685;	//Izの初期値
-	Ixz = 0.0;//361921;	//Ixzの初期値
-	Izx = 0.0;//361921;	//Izxの初期値
+	Ix  = 0.010694;	//Ixの初期値
+	Iy  = 0.010895;	//Iyの初期値
+	Iz  = 0.012944;	//Izの初期値
+	Ixz = 0.0000361921;	//Ixzの初期値
+	Izx = 0.0000361921;	//Izxの初期値
 	L   = 0.0;	//Lの初期値
 	M   = 0.0;	//Mの初期値
 	N   = 0.0;	//Nの初期値
 	h   = 0.01;	//刻み幅
 	l   = 136.0;       //腕の長さ
-	T1  = -(m*9.80665/4) - 13.0; //+ 10.0;
-	T2  = -(m*9.80665/4) - 17.0; //+ 10.0;
-	T3  = -(m*9.80665/4) - 15.0; //+ 10.0;
-	T4  = -(m*9.80665/4) - 15.0; //+ 10.0;
+	af  = 5.0;	//afの初期値
+	ab  = 5.0;	//abの初期値
+	ar  = 5.0;	//arの初期値
+	al  = 5.0;	//alの初期値
+	bf  = 33.3 * af - 50.0;	//bfの初期値
+	bb  = 33.3 * ab - 50.0;	//bbの初期値
+	br  = 33.3 * ar - 50.0;	//brの初期値
+	bl  = 33.3 * al - 50.0;	//blの初期値
+	T1  = -(m*9.80665/4) - bf; 
+	T2  = -(m*9.80665/4) - bb;
+	T3  = -(m*9.80665/4) - br;
+	T4  = -(m*9.80665/4) - bl;
+	k   = 20.0;
 
 	char filename[] = "flightlog.txt";
 	char outstr[255];
@@ -138,9 +148,9 @@ double MM(double l,double T3,double T4)
 	return l * (T3 - T4);
 }
 
-double NM(double l,double T1,double T2,double T3,double T4)
+double NM(double k,double T1,double T2,double T3,double T4)
 {
-	return l * (T1 + T2 - (T3 + T4));
+	return k * (T1 + T2 - (T3 + T4));
 }
 
 double Zp(double T1,double T2,double T3,double T4)
