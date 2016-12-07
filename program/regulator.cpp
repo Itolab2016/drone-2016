@@ -1,5 +1,5 @@
-// 12月2日（金）作成
-// 最適レギュレータテストプログラム
+// 12月7日 改訂
+// 最適レギュレータプログラム
 
 #include <iostream>
 #include <iomanip>
@@ -74,13 +74,9 @@ void imuSetup ( void ) {
 		imu->update();
 		imu->read_gyroscope( &gx , &gy , &gz);
 
-		gx *= 180 / PI;
-		gy *= 180 / PI;
-		gz *= 180 / PI;
-
-		offset[0] += ( -gx * 0.0175 );
-		offset[1] += ( -gy * 0.0175 );
-		offset[2] += ( -gz * 0.0175 );
+		offset[0] += ( -gx );
+		offset[1] += ( -gy );
+		offset[2] += ( -gz );
 
 		usleep(10000);
 
@@ -119,11 +115,8 @@ void imuLoop ( void ) {
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
-	gx *= 180 / PI;
-	gy *= 180 / PI;
-	gz *= 180 / PI;
 
-	ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , my , mx , -mz , dt );
+	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
@@ -273,8 +266,8 @@ int main ( void ) {
 
 	//main loop
 
-	short PauseFlag = 1 , EndFlag = 0;
-	float roll_rad , pitch_rad , yaw_rad;
+	short c = 0 , PauseFlag = 1 , EndFlag = 0;
+	float gd;
 	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
 
 	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
@@ -303,7 +296,11 @@ int main ( void ) {
 
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					if( js.value == 1 ) {
+					if ( js.value == 0 ) {
+						c = 0;
+					}
+					if ( js.value == 1 && c == 0 ) {
+						c = 1;
 						if ( joy_button[3] == 1 ) {
 							PauseFlag = 1;
 							printf ( "PAUSE\n" );
@@ -315,20 +312,26 @@ int main ( void ) {
 
 			imuLoop ();
 
-			roll  = roll  * PI / 180;
-			pitch = pitch * PI / 180;
-			yaw   = yaw   * PI / 180;
+			roll  =   roll  * PI / 180.0;
+			pitch =   pitch * PI / 180.0;
+			yaw   = - yaw   * PI / 180.0;
+
+			gd = gx;
+			gx = gy;
+			gy = gd;
+
+			gz = - gz;
 
 			//regulator
-			R =   0.858 * ax * 0.001 + 0.011 * ay * 0.001 - 1.919 * az * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
-			L = - 0.696 * ax * 0.001 + 0.013 * ay * 0.001 - 2.414 * az * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
-			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
-			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
+			R =   0.858 * gy * 0.001 + 0.011 * gx * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
+			L = - 0.696 * gy * 0.001 + 0.013 * gx * 0.001 - 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
+			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
+			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = 1.000 * R + 0.128;
-			L = 1.000 * L + 0.013;
-			F = 1.000 * F + 0.013;
-			B = 1.000 * B + 0.128;
+			R = 1.000 * R + 0.000;
+			L = 1.000 * L + 0.000;
+			F = 1.000 * F + 0.000;
+			B = 1.000 * B + 0.000;
 
 			//limitter
 			if ( R > 2.0 ) R = 2.0;
@@ -384,7 +387,11 @@ int main ( void ) {
 
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					if( js.value == 1 ) {
+					if ( js.value == 0 ) {
+						c = 0;
+					}
+					if ( js.value == 1 && c == 0 ) {
+						c = 1;
 						if ( joy_button[3] == 1 ) {
 							PauseFlag = 0;
 							printf ( "RESTART\n" );
