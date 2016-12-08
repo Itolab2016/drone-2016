@@ -1,4 +1,4 @@
-// 12月5日（月）改訂
+// 12月8日 作成
 // メインプログラム
 
 #include <iostream>
@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <fstream>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -73,13 +74,9 @@ void imuSetup ( void ) {
 		imu->update();
 		imu->read_gyroscope( &gx , &gy , &gz);
 
-		gx *= 180 / PI;
-		gy *= 180 / PI;
-		gz *= 180 / PI;
-
-		offset[0] += ( -gx * 0.0175 );
-		offset[1] += ( -gy * 0.0175 );
-		offset[2] += ( -gz * 0.0175 );
+		offset[0] += ( -gx );
+		offset[1] += ( -gy );
+		offset[2] += ( -gz );
 
 		usleep(10000);
 
@@ -118,11 +115,12 @@ void imuLoop ( void ) {
 	ax /= G_SI;
 	ay /= G_SI;
 	az /= G_SI;
-	gx *= 180 / PI;
-	gy *= 180 / PI;
-	gz *= 180 / PI;
 
-	ahrs.update( ax , ay , az , gx * 0.0175 , gy * 0.0175 , gz * 0.0175 , my , mx , -mz , dt );
+	mx = mx * PI / 180;
+	my = my * PI / 180;
+	mz = mz * PI / 180;
+
+	ahrs.update( ax , ay , az , gx , gy , gz , mx , my , mz , dt );
 
 	//Read Euler angles
 
@@ -270,23 +268,27 @@ int main ( void ) {
 	past_time = now_time;
 	interval  = now_time - past_time;
 
-	short PauseFlag = 1 , EndFlag = 0;
-	float StickRx , StickRy , StickLx , StickLy;
-	float throttle;
-	float rroll , rpitch , ryaw;
-	float roll_rad , pitch_rad , yaw_rad;
-	float R = 1.0 , L = 1.0 , F = 1.0 , B = 1.0;
-
-	pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-	pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-	pwm.set_duty_cycle ( FRONT_MOTOR , F );
-	pwm.set_duty_cycle ( REAR_MOTOR  , B );
-
 	//main loop
+
+	short c = 0 , PauseFlag = 1 , EndFlag = 0;
+	float SRx , SRy , SLx , SLy;
+	float throttle , rroll , rpitch , ryaw , cyaw;
+	float ad , gd;
+	float R , L , F , B;
+	float min = 1.0 , max = 2.0;
+
+	pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+	pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+	pwm.set_duty_cycle ( FRONT_MOTOR , min );
+	pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 	while ( EndFlag == 0 ) {
 
 		led.setColor ( Colors :: Red );
+
+		imuLoop();
+
+		cyaw = yaw;
 
 		while ( PauseFlag == 0 ) {
 
@@ -305,7 +307,11 @@ int main ( void ) {
 
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					if( js.value == 1 ) {
+					if ( js.value == 0 ) {
+						c = 0;
+					}
+					if ( js.value == 1 && c == 0 ) {
+						c = 1;
 						if ( joy_button[3] == 1 ) {
 							PauseFlag = 1;
 							printf ( "PAUSE\n" );
@@ -315,58 +321,68 @@ int main ( void ) {
 
 			}
 
-			StickRx =  joy_axis[2] / 23170.0;
-			StickRy = -joy_axis[3] / 23170.0;
-			StickLx =  joy_axis[0] / 23170.0;
-			StickLy =  joy_axis[1] / 23170.0;
+			SRx =  joy_axis[2] / 23170.0;
+			SRy = -joy_axis[3] / 23170.0;
+			SLx =  joy_axis[0] / 23170.0;
+			SLy =  joy_axis[1] / 23170.0;
 
-			if ( StickRx >  1.0 ) StickRx =  1.0;
-			if ( StickRx < -1.0 ) StickRx = -1.0;
-			if ( StickRy >  1.0 ) StickRy =  1.0;
-			if ( StickRy < -1.0 ) StickRy = -1.0;
-			if ( StickLx >  1.0 ) StickLx =  1.0;
-			if ( StickLx < -1.0 ) StickLx = -1.0;
-			if ( StickLy >  1.0 ) StickLy =  1.0;
-			if ( StickLy < -1.0 ) StickLy = -1.0;
+			if ( SRx >  1.0 ) SRx =  1.0;
+			if ( SRx < -1.0 ) SRx = -1.0;
+			if ( SRy >  1.0 ) SRy =  1.0;
+			if ( SRy <  0.0 ) SRy =  0.0;
+			if ( SLx >  1.0 ) SLx =  1.0;
+			if ( SLx < -1.0 ) SLx = -1.0;
+			if ( SLy >  1.0 ) SLy =  1.0;
+			if ( SLy < -1.0 ) SLy = -1.0;
 
-			throttle = StickRy;
-			rpitch   = StickLy;
-			rroll    = StickLx;
-			ryaw     = StickRx;
+			throttle = SRy;
+			rpitch   = SLy;
+			rroll    = SLx;
+			ryaw     = SRx;
 
 			imuLoop ();
 
-			roll_rad  = roll  * PI / 180;
-			pitch_rad = pitch * PI / 180;
-			yaw_rad   = yaw   * PI / 180;
+			roll  =   roll  * PI / 180.0;
+			pitch =   pitch * PI / 180.0;
+			yaw   = - yaw   * PI / 180.0;
+
+			ad =   ax;
+			ax =   ay;
+			ay =   ad;
+			az = - az;
+
+			gd =   gx;
+			gx =   gy;
+			gy =   gd;
+			gz = - gz;
 
 			//regulator
-			R =   0.858 * ax * 0.001 + 0.011 * ay * 0.001 - 1.919 * az * 0.001 + 7.816 * roll_rad + 0.028 * pitch_rad - 5.042 * yaw_rad;
-			L = - 0.696 * ax * 0.001 + 0.013 * ay * 0.001 - 2.414 * az * 0.001 - 6.238 * roll_rad + 0.035 * pitch_rad - 6.295 * yaw_rad;
-			F =   0.007 * ax * 0.001 - 0.749 * ay * 0.001 + 1.687 * az * 0.001 + 0.017 * roll_rad - 6.664 * pitch_rad + 4.385 * yaw_rad;
-			B =   0.006 * ax * 0.001 + 0.824 * ay * 0.001 + 1.506 * az * 0.001 + 0.016 * roll_rad + 7.456 * pitch_rad + 3.967 * yaw_rad;
+			R =   0.858 * gy * 0.001 + 0.011 * gx * 0.001 - 1.919 * gz * 0.001 + 7.816 * roll + 0.028 * pitch - 5.042 * yaw;
+			L = - 0.696 * gy * 0.001 + 0.013 * gx * 0.001 - 2.414 * gz * 0.001 - 6.238 * roll + 0.035 * pitch - 6.295 * yaw;
+			F =   0.007 * gy * 0.001 - 0.749 * gx * 0.001 + 1.687 * gz * 0.001 + 0.017 * roll - 6.664 * pitch + 4.385 * yaw;
+			B =   0.006 * gy * 0.001 + 0.824 * gx * 0.001 + 1.506 * gz * 0.001 + 0.016 * roll + 7.456 * pitch + 3.967 * yaw;
 
-			R = R + 0.128 + throttle - rroll  + yaw;
-			L = L + 0.013 + throttle + rroll  + yaw;
-			F = F + 0.013 + throttle + rpitch - yaw;
-			B = B + 0.128 + throttle - rpitch - yaw;
+			R = min + 0.200 * R + throttle;
+			L = min + 0.200 * L + throttle;
+			F = min + 0.200 * F + throttle;
+			B = min + 0.200 * B + throttle;
 
 			//limitter
-			if ( R > 2.0 ) R = 2.0;
-			if ( R < 1.0 ) R = 1.0;
-			if ( L > 2.0 ) L = 2.0;
-			if ( L < 1.0 ) L = 1.0;
-			if ( F > 2.0 ) F = 2.0;
-			if ( F < 1.0 ) F = 1.0;
-			if ( B > 2.0 ) B = 2.0;
-			if ( B < 1.0 ) B = 1.0;
+			if ( R > max ) R = max;
+			if ( R < min ) R = min;
+			if ( L > max ) L = max;
+			if ( L < min ) L = min;
+			if ( F > max ) F = max;
+			if ( F < min ) F = min;
+			if ( B > max ) B = max;
+			if ( B < min ) B = min;
 
 			pwm.set_duty_cycle ( RIGHT_MOTOR , R );
 			pwm.set_duty_cycle ( LEFT_MOTOR  , L );
 			pwm.set_duty_cycle ( FRONT_MOTOR , F );
 			pwm.set_duty_cycle ( REAR_MOTOR  , B );
 
-			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n"
+			sprintf( outstr , "%lu %lu %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f"
 					,now_time ,interval
 					,gx ,gy ,gz ,ax ,ay ,az ,mx ,my ,mz
 					,roll ,pitch ,yaw
@@ -381,19 +397,12 @@ int main ( void ) {
 
 		}
 
-		R = 1.0;
-		L = 1.0;
-		F = 1.0;
-		B = 1.0;
-
-		pwm.set_duty_cycle ( RIGHT_MOTOR , R );
-		pwm.set_duty_cycle ( LEFT_MOTOR  , L );
-		pwm.set_duty_cycle ( FRONT_MOTOR , F );
-		pwm.set_duty_cycle ( REAR_MOTOR  , B );
+		pwm.set_duty_cycle ( RIGHT_MOTOR , min );
+		pwm.set_duty_cycle ( LEFT_MOTOR  , min );
+		pwm.set_duty_cycle ( FRONT_MOTOR , min );
+		pwm.set_duty_cycle ( REAR_MOTOR  , min );
 
 		led.setColor ( Colors :: Blue );
-
-		usleep ( 1000 );
 
 		while ( PauseFlag == 1 ) {
 
@@ -407,7 +416,11 @@ int main ( void ) {
 
 				case JS_EVENT_BUTTON:
 					joy_button[( int )js.number] = js.value;
-					if( js.value == 1 ) {
+					if ( js.value == 0 ) {
+						c = 0;
+					}
+					if ( js.value == 1 && c == 0 ) {
+						c = 1;
 						if ( joy_button[3] == 1 ) {
 							PauseFlag = 0;
 							printf ( "RESTART\n" );
@@ -423,8 +436,6 @@ int main ( void ) {
 			}
 	
 		}
-
-		usleep ( 1000 );
 
 	}
 
